@@ -66,7 +66,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-size:17px;line-height:1
 .faq details:last-child{border-bottom:1px solid var(--line)}
 .faq summary{cursor:pointer;font-weight:650;list-style-position:outside}
 .faq p{margin:10px 0 0;color:var(--muted);max-width:62ch}
-.foot{margin:48px 0 0;padding:20px 0 40px;color:var(--muted);font-size:.95rem}
+.foot{margin-top:48px;padding-top:20px;padding-bottom:40px;color:var(--muted);font-size:.95rem}
 
 .back{display:inline-flex;align-items:center;gap:4px;margin:14px 0 0 -6px;padding:8px 10px 8px 6px;border:0;background:none;color:var(--ink);font:inherit;font-weight:650;cursor:pointer;border-radius:8px}
 .back:hover{background:var(--sunk)}
@@ -347,13 +347,79 @@ async function renderJpeg(page, scale, q){
   c.width = c.height = 0;
   return blob;
 }
-function loadImg(file){
+function sniffFormat(u8, name){
+  function ascii(a, b){ var t = ''; for(var i=a; i<b && i<u8.length; i++) t += String.fromCharCode(u8[i]); return t; }
+  if(u8[0] === 0xFF && u8[1] === 0xD8) return {name:'JPEG', mime:'image/jpeg'};
+  if(u8[0] === 0x89 && ascii(1,4) === 'PNG') return {name:'PNG', mime:'image/png'};
+  if(ascii(0,4) === 'GIF8') return {name:'GIF', mime:'image/gif'};
+  if(ascii(0,4) === 'RIFF' && ascii(8,12) === 'WEBP') return {name:'WebP', mime:'image/webp'};
+  if(ascii(0,2) === 'BM') return {name:'BMP', mime:'image/bmp'};
+  if(ascii(0,4) === 'II*\u0000' || ascii(0,4) === 'MM\u0000*') return {name:'TIFF', mime:'image/tiff'};
+  if(ascii(4,8) === 'ftyp'){
+    var brand = ascii(8,12);
+    if(brand === 'avif' || brand === 'avis') return {name:'AVIF', mime:'image/avif'};
+    if(/^(heic|heix|hevc|hevx|heim|heis|mif1|msf1)$/.test(brand)) return {name:'HEIC', mime:'image/heic'};
+  }
+  var head = ascii(0,300).toLowerCase();
+  if(head.indexOf('<svg') > -1) return {name:'SVG', mime:'image/svg+xml'};
+  var ext = (name.match(/\.([a-z0-9]+)$/i) || [])[1];
+  ext = ext ? ext.toLowerCase() : '';
+  var byExt = {jpg:['JPEG','image/jpeg'], jpeg:['JPEG','image/jpeg'], jfif:['JPEG','image/jpeg'], png:['PNG','image/png'], gif:['GIF','image/gif'], webp:['WebP','image/webp'], bmp:['BMP','image/bmp'], avif:['AVIF','image/avif'], heic:['HEIC','image/heic'], heif:['HEIC','image/heic'], svg:['SVG','image/svg+xml'], tif:['TIFF','image/tiff'], tiff:['TIFF','image/tiff']};
+  if(byExt[ext]) return {name:byExt[ext][0], mime:byExt[ext][1]};
+  return {name:'Image', mime:''};
+}
+function loadScript(src){
   return new Promise(function(res, rej){
-    var u = URL.createObjectURL(file), im = new Image();
-    im.onload = function(){ URL.revokeObjectURL(u); res(im); };
-    im.onerror = function(){ URL.revokeObjectURL(u); rej(new Error('Could not open '+file.name+'. Please use JPG or PNG images.')); };
-    im.src = u;
+    var el = document.createElement('script');
+    el.src = src; el.onload = res;
+    el.onerror = function(){ rej(new Error('Could not load the HEIC converter. Check your internet connection.')); };
+    document.head.appendChild(el);
   });
+}
+async function heicToJpeg(blob){
+  if(!window.heic2any) await loadScript('https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js');
+  var out = await window.heic2any({blob:blob, toType:'image/jpeg', quality:0.92});
+  return Array.isArray(out) ? out[0] : out;
+}
+function imgFromUrl(url){
+  return new Promise(function(res, rej){
+    var im = new Image();
+    im.onload = function(){ res(im); };
+    im.onerror = function(){ rej(new Error('img failed')); };
+    im.src = url;
+  });
+}
+async function viaImg(blob){
+  var u = URL.createObjectURL(blob);
+  try{
+    var im = await imgFromUrl(u);
+    return {src:im, w:im.naturalWidth || 1200, h:im.naturalHeight || 1200, done:function(){ URL.revokeObjectURL(u); }};
+  }catch(e){ URL.revokeObjectURL(u); throw e; }
+}
+function viaData(blob){
+  return new Promise(function(res, rej){
+    var fr = new FileReader();
+    fr.onerror = function(){ rej(new Error('read failed')); };
+    fr.onload = async function(){
+      try{ var im = await imgFromUrl(fr.result); res({src:im, w:im.naturalWidth || 1200, h:im.naturalHeight || 1200, done:function(){}}); }
+      catch(e){ rej(e); }
+    };
+    fr.readAsDataURL(blob);
+  });
+}
+async function decodeImage(f){
+  var blob = f.blob;
+  if(f.fmtName === 'HEIC'){
+    try{ blob = await heicToJpeg(blob); }catch(e){ console.error(e); }
+  }
+  try{ return await viaImg(blob); }catch(e){}
+  try{
+    var bmp = await createImageBitmap(blob);
+    return {src:bmp, w:bmp.width, h:bmp.height, done:function(){ try{ bmp.close(); }catch(e){} }};
+  }catch(e){}
+  try{ return await viaData(blob); }catch(e){}
+  if(f.fmtName === 'HEIC') throw new Error('Could not convert '+f.name+' (HEIC). Set your camera to save JPG, or share the photo as JPG, then try again.');
+  throw new Error('Could not open '+f.name+' ('+(f.fmtName || 'unknown format')+'). Remove it and pick it again from your gallery.');
 }
 
 /* ---------- option builders ---------- */
@@ -463,7 +529,7 @@ var TOOLS = [
       return {summary:'Rotated '+idx.length+' page'+(idx.length===1?'':'s')+'.', files:[{name:baseName(f.name)+'-rotated.pdf', blob:pdfBlob(await doc.save())}]};
     }},
 
-  { id:'image-to-pdf', group:'Convert', name:'Image to PDF', blurb:'Turn JPG or PNG photos into one PDF. Good for scanned notes.',
+  { id:'image-to-pdf', group:'Convert', name:'Image to PDF', blurb:'Turn photos into one PDF. Works with JPG, PNG, WebP, HEIC, GIF, BMP, AVIF and SVG.',
     kind:'image', multiple:true, reorder:true, min:1, drop:'Choose images', action:'Convert to PDF',
     options(ctx){
       ctx.opts.size = 'a4'; ctx.opts.margin = true;
@@ -479,14 +545,15 @@ var TOOLS = [
       for(var i=0;i<n;i++){
         var f = ctx.files[i];
         ui.progress(i/n, 'Adding image '+(i+1)+' of '+n); await tick();
-        var im = await loadImg(f.file);
-        var w = im.naturalWidth, hh = im.naturalHeight, k = Math.min(1, 3000/Math.max(w,hh));
+        var dec = await decodeImage(f);
+        var w = dec.w, hh = dec.h, k = Math.min(1, 3000/Math.max(w,hh));
         w = Math.max(1, Math.round(w*k)); hh = Math.max(1, Math.round(hh*k));
         var c = document.createElement('canvas'); c.width = w; c.height = hh;
         var cx = c.getContext('2d');
-        var isPng = /png/i.test(f.file.type) || /\.png$/i.test(f.name);
+        var isPng = f.fmtName === 'PNG';
         if(!isPng){ cx.fillStyle = '#fff'; cx.fillRect(0,0,w,hh); }
-        cx.drawImage(im,0,0,w,hh);
+        cx.drawImage(dec.src,0,0,w,hh);
+        if(dec.done) dec.done();
         var bytes = new Uint8Array(await (await toBlob(c, isPng ? 'image/png' : 'image/jpeg', 0.9)).arrayBuffer());
         c.width = c.height = 0;
         var emb = isPng ? await doc.embedPng(bytes) : await doc.embedJpg(bytes);
@@ -674,9 +741,9 @@ function mountTool(def, root){
   var ctx = {files:[], opts:{}, busy:false, seq:0};
   var okFile = def.kind === 'pdf'
     ? function(f){ return /\.pdf$/i.test(f.name) || f.type === 'application/pdf'; }
-    : function(f){ return /^image\//.test(f.type) || /\.(jpe?g|png|webp|gif|bmp)$/i.test(f.name); };
+    : function(f){ return /^image\//.test(f.type) || /\.(jpe?g|jfif|png|webp|gif|bmp|avif|heic|heif|svg|tiff?)$/i.test(f.name); };
 
-  var input = h('input',{type:'file',class:'sr',accept:def.kind==='pdf'?'application/pdf,.pdf':'image/*',multiple:def.multiple,
+  var input = h('input',{type:'file',class:'sr',accept:def.kind==='pdf'?'application/pdf,.pdf':'image/*,.heic,.heif,.avif,.webp,.gif,.bmp,.svg,.tif,.tiff,.jfif',multiple:def.multiple,
     onchange:function(){ add(Array.prototype.slice.call(input.files)); input.value=''; }});
   var dropMain = h('span',{class:'drop-main'}, def.drop);
   var drop = h('label',{class:'drop'}, input, dropMain, h('span',{class:'drop-sub'}, 'or drop '+(def.multiple?'them':'it')+' here'));
@@ -703,12 +770,12 @@ function mountTool(def, root){
   function add(files){
     say(''); clearResult();
     var good = files.filter(okFile), bad = files.length - good.length;
-    if(bad) say(bad+' file'+(bad>1?'s were':' was')+' skipped. This tool needs '+(def.kind==='pdf'?'PDF files.':'image files (JPG or PNG).'));
+    if(bad) say(bad+' file'+(bad>1?'s were':' was')+' skipped. This tool needs '+(def.kind==='pdf'?'PDF files.':'image files (JPG, PNG, WebP, HEIC and more).'));
     if(!def.multiple){ good = good.slice(0,1); if(good.length) ctx.files = []; }
     good.forEach(function(file){
       var e = {id:++ctx.seq, file:file, name:file.name, size:file.size, pages:null, error:null};
       ctx.files.push(e);
-      if(def.kind === 'pdf') inspect(e);
+      if(def.kind === 'pdf') inspect(e); else prepImage(e);
     });
     refresh();
   }
@@ -723,11 +790,23 @@ function mountTool(def, root){
     }
     refresh();
   }
+  async function prepImage(e){
+    try{
+      var buf = await e.file.arrayBuffer();
+      var info = sniffFormat(new Uint8Array(buf.slice(0,300)), e.name);
+      e.fmtName = info.name;
+      if(info.name === 'TIFF') e.error = 'TIFF is not supported by browsers. Convert it to JPG or PNG first.';
+      else e.blob = new Blob([buf], {type:info.mime});
+    }catch(err){
+      e.error = 'Could not read this file. Remove it and pick it again from your gallery.';
+    }
+    refresh();
+  }
   function move(i,d){ var j = i+d, t = ctx.files[i]; ctx.files[i] = ctx.files[j]; ctx.files[j] = t; clearResult(); refresh(); }
   function remove(i){ ctx.files.splice(i,1); clearResult(); refresh(); }
 
   function row(f,i){
-    var meta = f.error || [fmt(f.size), f.pages ? f.pages+(f.pages===1?' page':' pages') : (def.kind==='pdf' ? 'reading file' : '')].filter(Boolean).join(', ');
+    var meta = f.error || [fmt(f.size), def.kind==='pdf' ? (f.pages ? f.pages+(f.pages===1?' page':' pages') : 'reading file') : (f.fmtName || 'reading file')].join(', ');
     var acts = [];
     if(def.reorder && ctx.files.length > 1){
       acts.push(h('button',{type:'button',class:'icon-btn','aria-label':'Move '+f.name+' up',disabled:ctx.busy||i===0,onclick:function(){ move(i,-1); }}, icon('up',18)));
@@ -742,7 +821,7 @@ function mountTool(def, root){
     list.replaceChildren.apply(list, ctx.files.map(row));
     var has = ctx.files.length > 0;
     list.hidden = !has; actions.hidden = !has; optsBox.hidden = !has || !optEl;
-    var pending = ctx.files.some(function(f){ return def.kind==='pdf' && f.pages == null && !f.error; });
+    var pending = ctx.files.some(function(f){ return !f.error && (def.kind==='pdf' ? f.pages == null : !f.blob); });
     var bad = ctx.files.some(function(f){ return f.error; });
     var enough = ctx.files.length >= (def.min || 1);
     go.disabled = ctx.busy || pending || bad || !enough;
