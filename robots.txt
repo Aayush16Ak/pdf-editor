@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://aayush16ak.github.io/pdf-editor/sitemap.xml

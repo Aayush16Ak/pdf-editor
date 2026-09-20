@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Image to PDF Converter - JPG, PNG, HEIC | PDF Editor</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="Convert JPG, PNG, WebP, HEIC and other images to one PDF for free. Reorder photos, choose A4. Photos are never uploaded.">
+<meta property="og:title" content="Image to PDF Converter - JPG, PNG, HEIC | PDF Editor">
+<meta property="og:description" content="Convert JPG, PNG, WebP, HEIC and other images to one PDF for free. Reorder photos, choose A4. Photos are never uploaded.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%84%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "WebApplication", "name": "Image to PDF - PDF Editor", "description": "Convert JPG, PNG, WebP, HEIC and other images to one PDF for free. Reorder photos, choose A4. Photos are never uploaded.", "applicationCategory": "UtilitiesApplication", "operatingSystem": "Any", "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"}}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Which image formats can I use?", "acceptedAnswer": {"@type": "Answer", "text": "JPG, PNG, WebP, HEIC, GIF, BMP, AVIF and SVG. TIFF is not supported by web browsers, so convert it to JPG or PNG first."}}, {"@type": "Question", "name": "Can I put many photos in one PDF?", "acceptedAnswer": {"@type": "Answer", "text": "Yes. Add as many as your device can handle, then change their order with the arrows before converting."}}, {"@type": "Question", "name": "Will my photos be uploaded?", "acceptedAnswer": {"@type": "Answer", "text": "No. Conversion happens inside your browser and your photos stay on your device."}}, {"@type": "Question", "name": "The PDF is too large. What can I do?", "acceptedAnswer": {"@type": "Answer", "text": "Run the PDF through Compress PDF, or choose fewer or smaller photos."}}]}</script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+</head>
+<body data-tool="image-to-pdf">
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="index.html" aria-label="PDF Editor home"><svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><path d="M6 3h11l6 6v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" fill="#FFE14D" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M17 3v6h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg><span>PDF Editor</span></a>
+  </div>
+</header>
+<main class="wrap">
+  <nav class="crumbs" aria-label="Breadcrumb"><a href="index.html">All tools</a></nav>
+  <h1 class="tool-title">Image to PDF</h1>
+  <p class="tool-blurb">Turn photos into one PDF. Works with JPG, PNG, WebP, HEIC, GIF, BMP, AVIF and SVG.</p>
+  <div id="tool-root"></div>
+  <section class="prose">
+    <h2>How to use Image to PDF</h2>
+    <ol>
+      <li>Tap Choose images and select one or more photos from your gallery.</li>
+      <li>Use the arrows to put the images in the order you want.</li>
+      <li>Choose A4 page or Same size as the image, and decide if you want a white margin.</li>
+      <li>Tap Convert to PDF, then download images.pdf.</li>
+    </ol>
+    <h2>About this tool</h2>
+    <p>Image to PDF turns photos into a single PDF file. It is handy for scanned notes, forms, certificates, ID proofs and anything else you photographed with your phone camera and now need to send as one document.</p>
+    <p>The tool accepts JPG, PNG, WebP, HEIC (iPhone photos), GIF, BMP, AVIF and SVG. Photos keep the correct direction even when the phone saved them rotated. Transparent PNG images stay transparent, and other formats are placed on a white background.</p>
+    <p>Choose A4 page to fit every image on a standard A4 sheet, or Same size as the image for a page that matches the picture with no white space. Very large photos are reduced to 3000 pixels on the long side, which is still sharp for reading and for printing on A4.</p>
+    <p>For a clear scan, photograph the page in good light, keep the phone straight above it and fill the frame. Your file stays on your device. It is processed inside your browser and is never uploaded to a server.</p>
+  </section>
+  <section class="faq">
+    <h2>Questions</h2>
+    <details><summary>Which image formats can I use?</summary><p>JPG, PNG, WebP, HEIC, GIF, BMP, AVIF and SVG. TIFF is not supported by web browsers, so convert it to JPG or PNG first.</p></details>
+    <details><summary>Can I put many photos in one PDF?</summary><p>Yes. Add as many as your device can handle, then change their order with the arrows before converting.</p></details>
+    <details><summary>Will my photos be uploaded?</summary><p>No. Conversion happens inside your browser and your photos stay on your device.</p></details>
+    <details><summary>The PDF is too large. What can I do?</summary><p>Run the PDF through Compress PDF, or choose fewer or smaller photos.</p></details>
+  </section>
+  <section class="prose">
+    <h2>More PDF tools</h2>
+    <ul class="related">
+      <li><a href="merge-pdf.html">Merge PDF</a></li>
+      <li><a href="compress-pdf.html">Compress PDF</a></li>
+      <li><a href="pdf-to-jpg.html">PDF to JPG</a></li>
+      <li><a href="rotate-pdf.html">Rotate PDF</a></li>
+    </ul>
+  </section>
+</main>
+<footer class="wrap foot">
+  <nav class="foot-links" aria-label="Site"><a href="index.html">All tools</a><a href="about.html">About</a><a href="contact.html">Contact</a><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms</a></nav>
+  <p>&copy; 2026 PDF Editor. Free PDF tools that run in your browser.</p>
+</footer>
+<noscript><p class="wrap">PDF Editor needs JavaScript to work. Please turn it on and reload.</p></noscript>
+<script defer src="app.js"></script>
+</body>
+</html>
